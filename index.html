@@ -1,0 +1,189 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>House Simulator</title>
+        <script src="phaser.min.js"></script>
+    </head>
+    <body>
+
+    <script type="text/javascript">
+
+    window.onload = function() {
+var game = new Phaser.Game(1000, 600, Phaser.CANVAS, '', { preload: preload, create: create, update: update });
+
+var toptext;
+var counter = 0;
+var floorIndex = 0;
+var wallIndex = 0;
+var floor;
+var walls;
+var menu;
+var furniture;
+var buttons;
+
+function preload () {
+    game.load.image('background', 'background.png');
+    game.load.image('floor', 'floor.png');
+    game.load.image('floorPreview0', 'floor.png');
+    game.load.image('floorPreview1', 'floor.png');
+    game.load.image('floorPreview2', 'floor.png');
+    game.load.image('wall', 'wall.png');
+    game.load.image('wallPreview0', 'wall.png');
+    game.load.image('wallPreview1', 'wall.png');
+    game.load.image('wallPreview2', 'wall.png');
+    game.load.spritesheet('floorButton', 'floorbutton.png', 180, 60);
+    game.load.spritesheet('wallsButton', 'wallsbutton.png', 180, 60);
+    game.load.spritesheet('furnitureButton', 'furniturebutton.png', 180, 60);
+    game.load.spritesheet('backButton', 'backbutton.png', 180, 60);
+    game.load.spritesheet('snapshotButton', 'snapshotbutton.png', 180, 60);
+    game.load.image('menu', 'menu.png');
+    game.load.image('lamp', 'lamp.png');
+    game.load.image('table', 'table2.png');
+    game.load.image('flowers', 'flowers.png');
+}
+
+function create() {
+
+    walls = game.add.sprite(0, 0, 'wall');
+    floor = game.add.sprite(0, 400, 'floor');
+    var background = game.add.sprite(0, 0, 'background');
+    var cropRect = {x : 0, y : floorIndex * 200 , width : 800, height : 200};
+    floor.crop(cropRect);
+    cropRect = {x : 0, y : wallIndex * 600 , width : 800, height : 600};
+    walls.crop(cropRect);
+    var cropRect = {x : 0, y : floorIndex * 200 , width : 800, height : 200};
+    floor.crop(cropRect);
+
+    furniture = game.add.group();
+    menu = game.add.sprite(800, 0, 'menu');
+    buttons = game.add.group();
+
+    var a = {variable:'main'};
+    goToMenu(a);
+
+    //toptext = game.add.text(270, 16, 'House Simulator 2015', { fill: '#ffffff' });
+}
+
+function update(){    
+    furniture.forEach(function(item) {
+        item.z = item.y + item.height;
+
+        if(item.x + item.width > 800){
+	    item.x = 800 - item.width;
+        }
+        if(item.x < 0){
+	    item.x = 0;
+        }
+        if(item.y + item.height > 600){
+	    item.y = 600 - item.height;
+        }
+        if(item.y < 0){
+	    item.y = 0;
+        }
+        
+    });
+    furniture.sort('z', Phaser.Group.SORT_ASCENDING);
+}
+
+function goToMenu(menuName){
+    buttons.destroy();
+    buttons = game.add.group();
+    if(menuName.variable == 'main'){
+        var wallsButton = game.add.button(800 + 10, 10, 'wallsButton', goToMenu, this, 1, 0, 1, 1);
+	wallsButton.variable = 'walls';
+        var floorButton = game.add.button(800 + 10, 10 + 60, 'floorButton', goToMenu, this, 1, 0, 1, 1);
+	floorButton.variable = 'floor';
+        var furnitureButton = game.add.button(800 + 10, 10 + 120, 'furnitureButton', goToMenu, this, 1, 0, 1, 1);
+	furnitureButton.variable = 'furniture';
+        var screenButton = game.add.button(800 + 10, 10 + 180, 'snapshotButton', screenshot, this, 1, 0, 1, 1);
+        buttons.add(wallsButton);
+        buttons.add(floorButton);
+        buttons.add(furnitureButton);
+        buttons.add(screenButton);
+    }
+    if(menuName.variable == 'walls'){
+        var backButton = game.add.button(800 + 10, 10, 'backButton', goToMenu, this, 1, 0, 1, 1);
+	backButton.variable = 'main';
+        buttons.add(backButton);
+
+        for(var i = 0; i < 3; i++){
+    		var buttonA = game.add.sprite(850 + 10, 10 + 120 + 140 * i, 'wallPreview' + i);
+    		buttonA.variable = i;
+    		buttonA.inputEnabled = true;
+    		buttonA.events.onInputDown.add(changeWalls, this);
+        	var cropRect = {x : 0, y : i * 600 , width : 800, height : 600};
+        	buttonA.crop(cropRect);
+    		buttonA.scale.setTo(0.1, 0.1);
+        	buttons.add(buttonA);
+	}
+    }    
+    if(menuName.variable == 'floor'){
+        var backButton = game.add.button(800 + 10, 10, 'backButton', goToMenu, this, 1, 0, 1, 1);
+	backButton.variable = 'main';
+        buttons.add(backButton);
+
+        for(var i = 0; i < 3; i++){
+    		var buttonA = game.add.sprite(810 + 10, 10 + 120 + 140 * i, 'floorPreview' + i);
+    		buttonA.variable = i;
+    		buttonA.inputEnabled = true;
+    		buttonA.events.onInputDown.add(changeFloor, this);
+        	var cropRect = {x : 0, y : i * 200 , width : 800, height : 200};
+        	buttonA.crop(cropRect);
+    		buttonA.scale.setTo(0.2, 0.2);
+        	buttons.add(buttonA);
+	}
+    }
+
+    if(menuName.variable == 'furniture'){
+
+        var backButton = game.add.button(800 + 10, 10, 'backButton', goToMenu, this, 1, 0, 1, 1);
+	backButton.variable = 'main';
+        buttons.add(backButton);
+
+	var furnitureNames = ["table", "lamp", "flowers"];
+
+        for(var i = 0; i < 3; i++){
+    		var buttonA = game.add.sprite(800 + 10, 10 + 120 + 140 * i, furnitureNames[i]);
+    		buttonA.variable = furnitureNames[i];
+    		buttonA.inputEnabled = true;
+    		buttonA.events.onInputDown.add(addFurniture, this);
+        	var scaleFactor = 100 / buttonA.height;
+    		buttonA.scale.setTo(scaleFactor,scaleFactor);
+        	buttonA.x = 800 + (200 - buttonA.width) / 2;
+        	buttons.add(buttonA);
+	}
+    }
+}
+
+function changeFloor(newIndex) {
+    floorIndex = newIndex.variable;
+    var cropRect = {x : 0, y : floorIndex * 200 , width : 800, height : 200};
+    floor.crop(cropRect);
+}
+
+function addFurniture(type){
+    var newFurniture = game.add.sprite(250, 250, type.variable);
+    newFurniture.inputEnabled = true;
+    newFurniture.input.enableDrag(false,false,true);
+    newFurniture.bringToTop();
+    furniture.add(newFurniture);
+}
+
+function changeWalls(newIndex) {
+    wallIndex = newIndex.variable;
+    var cropRect = {x : 0, y : wallIndex * 600 , width : 800, height : 600};
+    walls.crop(cropRect);
+}
+
+function screenshot(){
+    window.open().location = document.getElementsByTagName("canvas")[0].toDataURL("image/jpeg", 1.0);
+}
+
+};
+    
+
+    </script>
+
+    </body>
+</html>
