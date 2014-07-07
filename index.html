@@ -21,6 +21,8 @@ var walls;
 var menu;
 var furniture;
 var buttons;
+var itemMenu;
+var trash;
 
 function preload () {
     game.load.image('background', 'images/background.png');
@@ -41,10 +43,14 @@ function preload () {
     game.load.image('lamp', 'images/lamp.png');
     game.load.image('table', 'images/table2.png');
     game.load.image('flowers', 'images/flowers.png');
+    game.load.image('trash', 'images/trash.png');
 }
 
 function create() {
-
+    game.physics.startSystem(Phaser.Physics.ARCADE);
+   // game.scaleMode = Phaser.StageScaleMode.EXACT_FIT;
+    game.scale.startFullScreen();
+    game.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
     walls = game.add.sprite(0, 0, 'wall');
     floor = game.add.sprite(0, 400, 'floor');
     var background = game.add.sprite(0, 0, 'background');
@@ -55,18 +61,32 @@ function create() {
     var cropRect = {x : 0, y : floorIndex * 200 , width : 800, height : 200};
     floor.crop(cropRect);
 
-    furniture = game.add.group();
+
     menu = game.add.sprite(800, 0, 'menu');
+
+    itemMenu = game.add.sprite(800, 0, 'menu');
+    itemMenu.visible = false;
+
+    trash = game.add.sprite(0, 0 , 'trash');
+    trash.x = 800 + (200- trash.width) / 2;
+    trash.y = game.height - trash.height;
+    trash.visible = false;
+
+    furniture = game.add.group();
+
     buttons = game.add.group();
 
+
+
+    
     var a = {variable:'main'};
     goToMenu(a);
 
     //toptext = game.add.text(270, 16, 'House Simulator 2015', { fill: '#ffffff' });
 }
 
-function update(){    
-    furniture.forEach(function(item) {
+function update(){      
+    /*furniture.forEach(function(item) {
         item.z = item.y + item.height;
 
         if(item.x + item.width > 800){
@@ -82,8 +102,11 @@ function update(){
 	    item.y = 0;
         }
         
-    });
-    furniture.sort('z', Phaser.Group.SORT_ASCENDING);
+    });*/
+
+    //game.physics.arcade.collide(trash, furniture, collisionHandler, null, this);
+    //game.physics.arcade.collide(trash, menu, collisionHandler, null, this);
+   // furniture.sort('z', Phaser.Group.SORT_ASCENDING);
 }
 
 function goToMenu(menuName){
@@ -165,8 +188,13 @@ function changeFloor(newIndex) {
 function addFurniture(type){
     var newFurniture = game.add.sprite(250, 250, type.variable);
     newFurniture.inputEnabled = true;
-    newFurniture.input.enableDrag(false,false,true);
+    newFurniture.input.enableDrag(false,true,true);
+    newFurniture.events.onDragStart.add(startDrag, this);
+    newFurniture.events.onDragStop.add(stopDrag, this);
     newFurniture.bringToTop();
+   // game.physics.enable(newFurniture, Phaser.Physics.ARCADE);
+   // newFurniture.enableBody = true;
+   // newFurniture.physicsBodyType = Phaser.Physics.ARCADE;
     furniture.add(newFurniture);
 }
 
@@ -177,7 +205,122 @@ function changeWalls(newIndex) {
 }
 
 function screenshot(){
-    window.open().location = document.getElementsByTagName("canvas")[0].toDataURL("image/jpeg", 1.0);
+    //window.open().location = document.getElementsByTagName("canvas")[0].toDataURL("image/jpeg", 1.0);
+    game.scale.startFullScreen();
+    game.scale.fullScreenScaleMode = Phaser.ScaleManager.EXACT_FIT;
+
+    game.scale.enterFullScreen.add(onEnterFullScreen, this);
+        if (this.isFullScreen)
+        {
+            //this.game.stage.canvas.style['width'] = '100%';
+            //this.game.stage.canvas.style['height'] = '100%';
+
+
+            //this.game.stage.canvas.style['width'] = screen.width + 'px';
+            //this.game.stage.canvas.style['height'] = screen.height + 'px';
+
+
+            if(this.game.stage.scaleMode == Phaser.StageScaleMode.EXACT_FIT) {
+                
+                //what was default till now
+                this.game.stage.canvas.style['width'] = '100%';
+                this.game.stage.canvas.style['height'] = '100%';
+
+
+                this.setMaximum();
+
+
+                this.game.input.scale.setTo(this.game.width / this.width, this.game.height / this.height);
+
+
+                this.aspectRatio = this.width / this.height;
+                this.scaleFactor.x = this.game.width / this.width;
+                this.scaleFactor.y = this.game.height / this.height;
+
+            this.width = this._width;
+            this.height = this._height;
+
+            this.game.input.scale.setTo(this.game.width / this.width, this.game.height / this.height);
+
+
+
+
+
+            } else if (this.game.stage.scaleMode == Phaser.StageScaleMode.NO_SCALE) {
+
+
+                //no scale black strips around the display 
+                //if the screen size is bigger than the game size
+
+
+                //do nothing
+
+
+            } else if (this.game.stage.scaleMode == Phaser.StageScaleMode.SHOW_ALL) {
+                //preserve aspect ratio, horizontal black lines or vertical black lines
+                this.game.stage.scale.setShowAll();
+                this.game.stage.scale.refresh();
+            }
+
+
+        }
+        else
+        {
+            this.game.stage.canvas.style['width'] = this.game.width + 'px';
+            this.game.stage.canvas.style['height'] = this.game.height + 'px';
+
+
+            this.width = this._width;
+            this.height = this._height;
+
+
+            this.game.input.scale.setTo(this.game.width / this.width, this.game.height / this.height);
+
+
+            this.aspectRatio = this.width / this.height;
+            this.scaleFactor.x = this.game.width / this.width;
+            this.scaleFactor.y = this.game.height / this.height;
+        }
+}
+
+function stopDrag(s){
+    if(s.x < trash.x + trash.width &&
+       s.x + s.width > trash.x &&
+       s.y < trash.y + trash.height &&
+       s.y + s.height > trash.y){
+        s.destroy();
+    }
+
+    if(s.x + s.width > 800){
+	s.x = 800 - s.width;
+    }
+    if(s.x < 0){
+        s.x = 0;
+    }
+    if(s.y + s.height > 600){
+        s.y = 600 - s.height;
+    }
+    if(s.y < 0){
+	s.y = 0;
+    }
+
+    trash.visible = false;
+    itemMenu.visible = false;
+    buttons.visible = true;
+}
+
+function startDrag(){
+    itemMenu.visible = true;
+    trash.visible = true;
+    buttons.visible = false;
+
+}
+
+function collisionHandler (t, f) {
+
+
+    //f.destroy();
+
 }
 
 };
